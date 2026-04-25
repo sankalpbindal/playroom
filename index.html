@@ -556,6 +556,8 @@ function setLineType(type){
   currentTraceIdx=0;
   allStrokePixels=[];
   lineResults=[];
+  completedStrokes=[];
+  currentStrokePath=[];
   buildTraceDots();
   drawTraceGuide();
   updateTraceSpeech();
@@ -655,20 +657,24 @@ function drawTraceGuide(){
       else ctx.fillText('↘️',cx,y1-12);
     }
 
-    // Done tick or fail cross
+    // Done tick or fail cross — drawn OVER the stroke so it's visible
     if(state==='done'){
-      const passed=lineResults[i]; // true=pass, false=fail, undefined=not yet
+      const passed=lineResults[i];
+
+      // Redraw the saved stroke for this column (so it's visible after canvas clear)
+      if(completedStrokes[i] && completedStrokes[i].length>1){
+        const pts=completedStrokes[i];
+        ctx.strokeStyle=passed===false?'rgba(255,100,100,0.55)':'rgba(75,200,120,0.55)';
+        ctx.lineWidth=18;ctx.lineCap='round';ctx.lineJoin='round';ctx.setLineDash([]);
+        ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+        for(let k=1;k<pts.length;k++) ctx.lineTo(pts[k][0],pts[k][1]);
+        ctx.stroke();
+      }
+
+      // Overlay tick/cross emoji centred in the column
       ctx.font=`${Math.min(colW*0.26,27)}px serif`;
       ctx.textAlign='center';
       ctx.fillText(passed===false?'❌':'✅',cx,h/2+8);
-      // Tint the guide line red if failed
-      if(passed===false){
-        ctx.setLineDash([10,8]);ctx.lineCap='round';
-        ctx.lineWidth=3;
-        ctx.strokeStyle='#ffb3b3';
-        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-        ctx.setLineDash([]);
-      }
     }
 
     // Column divider
@@ -691,13 +697,17 @@ function getPos(e){
   return{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};
 }
 
-canvas.addEventListener('mousedown',e=>{isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;});
-canvas.addEventListener('touchstart',e=>{e.preventDefault();isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;},{passive:false});
+canvas.addEventListener('mousedown',e=>{isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;currentStrokePath=[[p.x,p.y]];});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;currentStrokePath=[[p.x,p.y]];},{passive:false});
 canvas.addEventListener('mousemove',e=>{if(isDrawing)drawStroke(e);});
 canvas.addEventListener('touchmove',e=>{e.preventDefault();if(isDrawing)drawStroke(e);},{passive:false});
 canvas.addEventListener('mouseup',()=>{if(isDrawing){isDrawing=false;autoCheckLine();}});
 canvas.addEventListener('touchend',()=>{if(isDrawing){isDrawing=false;autoCheckLine();}});
 canvas.addEventListener('mouseleave',()=>{if(isDrawing){isDrawing=false;autoCheckLine();}});
+
+// Stores {pixels, path} for each completed column so we can redraw strokes
+let completedStrokes=[]; // array of arrays of [x,y] points per column
+let currentStrokePath=[]; // points for the stroke currently being drawn
 
 let autoCheckTimeout=null;
 function autoCheckLine(){
@@ -715,6 +725,8 @@ function drawStroke(e){
   ctx.strokeStyle='#4DABF7';ctx.lineWidth=18;ctx.lineCap='round';ctx.lineJoin='round';
   ctx.setLineDash([]);
   ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();
+
+  currentStrokePath.push([p.x,p.y]);
 
   // Sample points along this micro-segment
   const dist=Math.hypot(p.x-lastX,p.y-lastY);
@@ -772,11 +784,13 @@ function computeAccuracy(){
 
 function updateAccuracyBar(){
   const acc=computeAccuracy();
+  const straightness=computeStraightness();
+  const finalAcc=Math.round(acc*straightness);
   const bar=document.getElementById('accuracyBar');
-  bar.style.width=Math.min(acc,100)+'%';
-  bar.className='accuracy-bar-fill'+(acc>=80?' good':'');
+  bar.style.width=Math.min(finalAcc,100)+'%';
+  bar.className='accuracy-bar-fill'+(finalAcc>=80?' good':'');
   document.getElementById('accuracyLabel').textContent=
-    acc>=80?`Great! ${acc}% on track! 🌟`:`${acc}% — stay closer to the dots!`;
+    finalAcc>=80?`Great! ${finalAcc}% on track! 🌟`:`${finalAcc}% — stay closer to the dots!`;
 }
 
 function resetAccuracyBar(){
@@ -786,15 +800,68 @@ function resetAccuracyBar(){
 }
 
 // ---- Check line ----
+function computeStraightness(){
+  if(currentStrokePath.length<6) return 1.0;
+  const pts=currentStrokePath;
+  const x1=pts[0][0],y1=pts[0][1];
+  const x2=pts[pts.length-1][0],y2=pts[pts.length-1][1];
+  const lineDist=Math.hypot(x2-x1,y2-y1);
+  if(lineDist<10) return 0.05;
+
+  // Downsample path to ~60 evenly-spaced points so slow/fast strokes are treated equally
+  const TARGET=60;
+  const step=Math.max(1,Math.floor(pts.length/TARGET));
+  const sampled=[];
+  for(let i=0;i<pts.length;i+=step) sampled.push(pts[i]);
+  if(sampled[sampled.length-1]!==pts[pts.length-1]) sampled.push(pts[pts.length-1]);
+
+  // 1. PERPENDICULAR DEVIATION: avg distance from ideal straight line
+  // Uses sampled points — a toddler's natural wobble is ~25px, zigzag swings are 40-80px
+  let totalPerp=0;
+  for(const [px,py] of sampled){
+    const perp=Math.abs((y2-y1)*px-(x2-x1)*py+(x2*y1-y2*x1))/lineDist;
+    totalPerp+=perp;
+  }
+  const avgPerp=totalPerp/sampled.length;
+  // Forgive up to 25px average (toddler wobble); sharp drop for zigzag-level deviation
+  const perpScore=Math.max(0,1-Math.pow(avgPerp/25,1.4));
+
+  // 2. CROSS-AXIS REVERSALS on downsampled path
+  // Project onto perpendicular axis; require 12px swing before counting a reversal
+  // This ignores hand tremor but catches deliberate zigzag swings
+  const nx=-(y2-y1)/lineDist, ny=(x2-x1)/lineDist;
+  const crossVals=sampled.map(([px,py])=>nx*(px-x1)+ny*(py-y1));
+  let reversals=0,lastSign=0,lastExtreme=crossVals[0];
+  for(let i=1;i<crossVals.length;i++){
+    const swing=crossVals[i]-lastExtreme;
+    if(Math.abs(swing)<12) continue; // ignore wobble smaller than ~12px
+    const s=swing>0?1:-1;
+    if(lastSign!==0&&s!==lastSign) reversals++;
+    lastSign=s;
+    lastExtreme=crossVals[i];
+  }
+  // Exponential penalty: 1 reversal=0.45x, 2=0.20x, 3=0.09x
+  // A good straight line has 0 reversals → score 1.0
+  const reversalScore=Math.pow(0.45,reversals);
+
+  return perpScore*reversalScore;
+}
+
 function checkLine(){
   if(allStrokePixels.length<20) return;
   clearTimeout(autoCheckTimeout);
   const acc=computeAccuracy();
-  const passed=acc>=75;
+  const straightness=computeStraightness();
+  const finalAcc=Math.round(acc*straightness);
+  const passed=finalAcc>=75;
+
+  // Save the current stroke path for this column before resetting
+  completedStrokes[currentTraceIdx]=[...currentStrokePath];
+  currentStrokePath=[];
 
   lineResults.push(passed);
   allStrokePixels=[];
-  drawTraceGuide(); // redraws with correct ✅/❌ for completed lines
+  drawTraceGuide(); // redraws with correct ✅/❌ and saved strokes for completed columns
   resetAccuracyBar();
 
   const lineDone=currentTraceIdx; // 0-based index of the line just drawn
@@ -824,7 +891,7 @@ function checkLine(){
         playPop();
         speak("Wow! You drew ALL three lines perfectly! You are a superstar!",1.08,2.0,'excited');
         showCelebration('🎨 Perfect! All 3 lines! ⭐⭐⭐',2,()=>{
-          currentTraceIdx=0;lineResults=[];drawTraceGuide();updateTraceSpeech();
+          currentTraceIdx=0;lineResults=[];completedStrokes=[];currentStrokePath=[];drawTraceGuide();updateTraceSpeech();
         });
       } else if(passes===2){
         // 2 out of 3 — good, celebrate but note the miss
@@ -832,21 +899,21 @@ function checkLine(){
         playPop();
         speak("Great job! Two out of three lines were correct! Let's practice once more!",0.92,1.7,'excited');
         showCelebration('🎨 2 out of 3 correct! Almost there! ⭐⭐',1,()=>{
-          currentTraceIdx=0;lineResults=[];drawTraceGuide();updateTraceSpeech();
+          currentTraceIdx=0;lineResults=[];completedStrokes=[];currentStrokePath=[];drawTraceGuide();updateTraceSpeech();
         });
       } else if(passes===1){
         // 1 out of 3 — gentle, try again
         playRetry();
         speak("You got one line right! Let's try all three again! You can do it!",0.82,1.2,'low');
         showRetry("1 out of 3 correct — let's try again! 💪",()=>{
-          currentTraceIdx=0;lineResults=[];drawTraceGuide();resetAccuracyBar();updateTraceSpeech();
+          currentTraceIdx=0;lineResults=[];completedStrokes=[];currentStrokePath=[];drawTraceGuide();resetAccuracyBar();updateTraceSpeech();
         });
       } else {
         // 0 out of 3 — try again
         playRetry();
         speak("Oops! Let's try the lines again! Go slowly along the dots! You can do it!",0.80,1.15,'low');
         showRetry("Let's try all 3 lines again! Stay on the dots! 🖊️",()=>{
-          currentTraceIdx=0;lineResults=[];drawTraceGuide();resetAccuracyBar();updateTraceSpeech();
+          currentTraceIdx=0;lineResults=[];completedStrokes=[];currentStrokePath=[];drawTraceGuide();resetAccuracyBar();updateTraceSpeech();
         });
       }
     },600); // small pause so child sees the final ❌/✅ on canvas before overlay
@@ -856,6 +923,9 @@ function checkLine(){
 function clearTrace(){
   clearTimeout(autoCheckTimeout);
   allStrokePixels=[];
+  currentStrokePath=[];
+  // Only clear the current column's saved stroke, keep previous ones
+  completedStrokes[currentTraceIdx]=undefined;
   drawTraceGuide();
   resetAccuracyBar();
   speak("Let's try again! You can do it!",0.80,1.15,'low');
@@ -992,7 +1062,15 @@ function checkAnswer(chosen,btn){
     playRetry();
     speak("Oops! Let's count again! Tap them one by one! You can do it!",0.78,1.1,'low');
     document.getElementById('countSpeech').textContent=mascot.emoji+' Oops! Count again! 🤔';
-    setTimeout(()=>{btn.classList.remove('wrong');setAnswerBtnsEnabled(true);},800);
+    setTimeout(()=>{
+      btn.classList.remove('wrong');
+      // Reset all tapped items so toddler counts from scratch
+      tappedCount=0;
+      document.getElementById('countDisplay').textContent='Tap to count! 👆';
+      document.getElementById('countDisplay').style.color='var(--coral)';
+      document.querySelectorAll('.obj-item').forEach(item=>item.classList.remove('tapped'));
+      setAnswerBtnsEnabled(false);
+    },800);
   }
 }
 

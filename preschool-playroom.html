@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>My Happy Playroom 🌈</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --sky:#fff9f0; --sun:#FFD93D; --coral:#FF6B6B; --mint:#6BCB77;
+    --blue:#4DABF7; --purple:#CC5DE8; --orange:#FF922B; --pink:#F06595;
+    --shadow:0 8px 32px rgba(0,0,0,0.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:'Nunito',sans-serif;
+    background:var(--sky);
+    height:100vh; overflow:hidden;
+    background-image:
+      radial-gradient(circle at 10% 20%,#ffd6e0 0%,transparent 40%),
+      radial-gradient(circle at 90% 10%,#d0f0fd 0%,transparent 40%),
+      radial-gradient(circle at 50% 90%,#d4f9d4 0%,transparent 40%);
+  }
+
+  /* CLOUDS */
+  .cloud{position:fixed;opacity:0.2;animation:drift linear infinite;pointer-events:none;font-size:2.5rem;z-index:0;}
+  .cloud:nth-child(1){top:3%;animation-duration:30s;}
+  .cloud:nth-child(2){top:15%;animation-duration:42s;animation-delay:-12s;font-size:1.8rem;}
+  .cloud:nth-child(3){top:55%;animation-duration:36s;animation-delay:-6s;font-size:2rem;}
+  @keyframes drift{from{left:-10%}to{left:110%}}
+
+  /* SCREENS */
+  .screen{
+    display:none; position:absolute; inset:0;
+    flex-direction:column; align-items:center;
+    overflow-y:auto; overflow-x:hidden;
+    padding:12px 16px; z-index:1;
+  }
+  .screen.active{display:flex;}
+
+  /* ===== MASCOT PICKER ===== */
+  #screen-mascot{justify-content:center;text-align:center;padding:10px 16px;}
+  .welcome-title{
+    font-family:'Fredoka One',cursive;
+    font-size:clamp(1.5rem,5vw,2.8rem);
+    color:var(--coral);
+    text-shadow:3px 3px 0 #FFD93D;
+    margin-bottom:3px;
+    animation:popIn 0.6s cubic-bezier(0.34,1.56,0.64,1);
+    line-height:1.1;
+  }
+  .welcome-sub{font-size:clamp(0.8rem,2.4vw,1.05rem);color:#888;margin-bottom:10px;font-weight:700;}
+  .mascot-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:8px;max-width:400px;width:100%;margin:0 auto 12px;
+  }
+  .mascot-card{
+    background:white;border-radius:18px;padding:12px 6px 9px;
+    cursor:pointer;border:4px solid transparent;box-shadow:var(--shadow);
+    transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);user-select:none;
+  }
+  .mascot-card:hover,.mascot-card:active{transform:scale(1.08) rotate(-2deg);}
+  .mascot-card.selected{border-color:var(--coral);background:#fff5f5;transform:scale(1.05);}
+  .mascot-emoji{font-size:clamp(1.9rem,5.5vw,2.6rem);display:block;margin-bottom:3px;}
+  .mascot-name{font-family:'Fredoka One',cursive;font-size:clamp(0.8rem,2.3vw,1rem);color:#444;}
+  .btn-start{
+    font-family:'Fredoka One',cursive;font-size:clamp(1.1rem,3.5vw,1.5rem);
+    padding:13px 44px;border-radius:50px;border:none;
+    background:linear-gradient(135deg,var(--coral),var(--orange));
+    color:white;cursor:pointer;
+    box-shadow:0 6px 0 #c0392b,0 8px 20px rgba(255,107,107,0.35);
+    transition:all 0.15s;display:none;
+  }
+  .btn-start:active{transform:translateY(3px);box-shadow:0 3px 0 #c0392b;}
+  .btn-start.show{display:inline-block;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+
+  /* ===== HOME ===== */
+  #screen-home{padding-top:12px;justify-content:flex-start;}
+  .top-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    width:100%;max-width:680px;margin-bottom:10px;
+  }
+  .mascot-badge{
+    background:white;border-radius:50px;padding:7px 14px 7px 11px;
+    display:flex;align-items:center;gap:7px;box-shadow:var(--shadow);
+    font-family:'Fredoka One',cursive;font-size:0.95rem;color:#444;
+    cursor:pointer;transition:transform 0.2s;
+  }
+  .mascot-badge:active{transform:scale(0.95);}
+  .mascot-badge span.emo{font-size:1.5rem;}
+  .mascot-badge .change-hint{font-size:0.6rem;color:#bbb;display:block;line-height:1;}
+  .stars-badge{
+    background:white;border-radius:50px;padding:7px 16px;box-shadow:var(--shadow);
+    font-family:'Fredoka One',cursive;font-size:1.05rem;color:var(--orange);
+  }
+  .speech-mascot-row{
+    display:flex;flex-direction:column;align-items:center;
+    margin-bottom:10px;width:100%;max-width:480px;
+  }
+  .home-title{font-family:'Fredoka One',cursive;font-size:clamp(1.3rem,4vw,2.2rem);color:#444;margin:6px 0 14px;text-align:center;}
+  .activity-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:540px;width:100%;}
+  .activity-card{
+    background:white;border-radius:22px;padding:22px 14px;text-align:center;
+    cursor:pointer;box-shadow:var(--shadow);border-bottom:6px solid;
+    transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);user-select:none;
+    position:relative;overflow:hidden;
+  }
+  .activity-card::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;border-radius:22px 22px 0 0;}
+  .activity-card:hover,.activity-card:active{transform:scale(1.06) translateY(-4px);}
+  .activity-card.trace{border-bottom-color:var(--blue);}
+  .activity-card.trace::before{background:var(--blue);}
+  .activity-card.count{border-bottom-color:var(--mint);}
+  .activity-card.count::before{background:var(--mint);}
+  .activity-icon{font-size:clamp(2.2rem,7vw,3.2rem);display:block;margin-bottom:6px;}
+  .activity-label{font-family:'Fredoka One',cursive;font-size:clamp(1rem,3vw,1.3rem);color:#444;margin-bottom:2px;}
+  .activity-sub{font-size:0.78rem;color:#aaa;font-weight:700;}
+
+  /* SHARED HEADER */
+  .act-header{display:flex;align-items:center;gap:10px;width:100%;max-width:640px;margin-bottom:10px;}
+  .btn-back{
+    background:white;border:none;border-radius:50%;width:46px;height:46px;font-size:1.3rem;
+    cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;
+    transition:transform 0.2s;flex-shrink:0;
+  }
+  .btn-back:active{transform:scale(0.9);}
+  .act-title{font-family:'Fredoka One',cursive;font-size:clamp(1.1rem,3.5vw,1.9rem);color:#444;}
+
+  /* ===== TRACING ===== */
+  #screen-trace{align-items:center;}
+  .trace-area{
+    background:white;border-radius:22px;box-shadow:var(--shadow);
+    padding:12px;width:100%;max-width:640px;
+    display:flex;flex-direction:column;align-items:center;
+  }
+  canvas#traceCanvas{border-radius:12px;background:#f8f9ff;touch-action:none;cursor:crosshair;max-width:100%;}
+  .trace-controls{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;justify-content:center;}
+  .trace-btn{
+    font-family:'Fredoka One',cursive;font-size:0.9rem;
+    padding:10px 20px;border-radius:50px;border:none;cursor:pointer;transition:all 0.15s;
+  }
+  .trace-btn:active{transform:translateY(2px);}
+  .btn-clear{background:#ff6b6b;color:white;box-shadow:0 4px 0 #c0392b;}
+  .btn-check{background:var(--mint);color:white;box-shadow:0 4px 0 #2f9e44;}
+  .line-type-selector{display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap;justify-content:center;}
+  .line-type-btn{
+    font-family:'Fredoka One',cursive;font-size:0.82rem;padding:7px 14px;border-radius:50px;
+    border:3px solid transparent;cursor:pointer;background:#f0f0f0;color:#666;transition:all 0.2s;
+  }
+  .line-type-btn.active{background:var(--blue);color:white;border-color:#1971c2;}
+  .progress-dots{display:flex;gap:8px;margin-bottom:8px;}
+  .dot{width:13px;height:13px;border-radius:50%;background:#e0e0e0;transition:all 0.3s;}
+  .dot.done{background:var(--mint);transform:scale(1.2);}
+  .dot.active{background:var(--blue);transform:scale(1.3);}
+  .accuracy-bar-wrap{width:92%;margin:7px 0 3px;}
+  .accuracy-label{font-family:'Fredoka One',cursive;font-size:0.82rem;color:#aaa;margin-bottom:3px;text-align:center;}
+  .accuracy-bar-bg{background:#eee;border-radius:20px;height:11px;overflow:hidden;}
+  .accuracy-bar-fill{height:100%;border-radius:20px;width:0%;transition:width 0.4s ease,background 0.3s;background:var(--coral);}
+  .accuracy-bar-fill.good{background:var(--mint);}
+
+  /* ===== COUNTING ===== */
+  #screen-count{align-items:center;}
+  .count-area{
+    background:white;border-radius:22px;box-shadow:var(--shadow);
+    padding:16px;width:100%;max-width:640px;
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .count-question{font-family:'Fredoka One',cursive;font-size:clamp(1rem,3vw,1.5rem);color:#444;text-align:center;margin-bottom:12px;}
+  .objects-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:14px;min-height:70px;}
+  .obj-item{
+    font-size:clamp(1.8rem,6vw,2.8rem);cursor:pointer;
+    transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);user-select:none;
+    position:relative;display:flex;align-items:center;justify-content:center;
+    width:clamp(50px,13vw,66px);height:clamp(50px,13vw,66px);
+    border-radius:13px;background:#f8f9ff;border:3px solid transparent;
+  }
+  .obj-item.tapped{background:#e8fff0;border-color:var(--mint);transform:scale(1.18);}
+  .obj-item .tick{
+    position:absolute;bottom:-4px;right:-4px;
+    background:var(--mint);color:white;border-radius:50%;
+    width:19px;height:19px;font-size:0.62rem;display:none;
+    align-items:center;justify-content:center;font-weight:900;border:2px solid white;
+  }
+  .obj-item.tapped .tick{display:flex;}
+  .count-number-display{font-family:'Fredoka One',cursive;font-size:2.4rem;color:var(--coral);margin-bottom:10px;min-height:48px;transition:all 0.2s;}
+  .answer-choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;}
+  .answer-btn{
+    font-family:'Fredoka One',cursive;font-size:1.6rem;
+    width:64px;height:64px;border-radius:16px;
+    border:4px solid #eee;background:white;cursor:pointer;
+    transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 4px 0 #ddd;color:#444;
+  }
+  .answer-btn:hover,.answer-btn:active{transform:scale(1.12);}
+  .answer-btn.correct{background:var(--mint);border-color:#40c057;color:white;box-shadow:0 4px 0 #2f9e44;}
+  .answer-btn.wrong{background:var(--coral);border-color:#fa5252;color:white;box-shadow:0 4px 0 #c92a2a;animation:shake 0.4s;}
+
+  /* MASCOT SPEECH */
+  .mascot-speech{
+    background:white;border-radius:16px;padding:10px 16px;box-shadow:var(--shadow);
+    font-family:'Fredoka One',cursive;font-size:clamp(0.82rem,2.2vw,1.05rem);color:#555;
+    max-width:440px;width:90%;text-align:center;position:relative;margin-bottom:14px;
+    animation:fadeSlideUp 0.5s ease;
+  }
+  .mascot-speech::after{
+    content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+    border:9px solid transparent;border-top-color:white;border-bottom:none;
+  }
+  .big-mascot{font-size:2.6rem;margin-top:2px;}
+
+  /* CELEBRATION */
+  .celebration-overlay{
+    position:fixed;inset:0;background:rgba(255,255,255,0.93);
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;z-index:1000;backdrop-filter:blur(4px);
+  }
+  .celebration-overlay.active{display:flex;}
+  .cele-emoji{font-size:5rem;animation:bounce 0.5s infinite alternate;}
+  .cele-text{
+    font-family:'Fredoka One',cursive;font-size:clamp(1.5rem,5vw,2.8rem);
+    color:var(--coral);text-shadow:3px 3px 0 var(--sun);text-align:center;margin:10px 20px;
+  }
+  .cele-stars{font-size:2rem;letter-spacing:6px;margin-bottom:18px;}
+  .btn-continue{
+    font-family:'Fredoka One',cursive;font-size:1.25rem;
+    padding:13px 36px;border-radius:50px;border:none;
+    background:linear-gradient(135deg,var(--mint),#20c997);
+    color:white;cursor:pointer;box-shadow:0 6px 0 #2f9e44;transition:all 0.15s;
+  }
+  .btn-continue:active{transform:translateY(3px);box-shadow:0 3px 0 #2f9e44;}
+
+  /* RETRY */
+  .retry-overlay{
+    position:fixed;inset:0;background:rgba(255,242,230,0.95);
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;z-index:1000;backdrop-filter:blur(3px);
+  }
+  .retry-overlay.active{display:flex;}
+  .retry-emoji{font-size:4.5rem;animation:wobble 0.6s ease;}
+  .retry-text{
+    font-family:'Fredoka One',cursive;font-size:clamp(1.3rem,4vw,2.2rem);
+    color:var(--orange);text-align:center;margin:12px 20px;
+  }
+  .accuracy-shown{font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--coral);margin-bottom:6px;}
+  .retry-sub{font-family:'Nunito',sans-serif;font-weight:700;color:#888;font-size:1rem;text-align:center;margin-bottom:18px;}
+  .btn-retry{
+    font-family:'Fredoka One',cursive;font-size:1.25rem;
+    padding:13px 36px;border-radius:50px;border:none;
+    background:linear-gradient(135deg,var(--orange),#FF6B6B);
+    color:white;cursor:pointer;box-shadow:0 6px 0 #c0392b;transition:all 0.15s;
+  }
+  .btn-retry:active{transform:translateY(3px);box-shadow:0 3px 0 #c0392b;}
+
+  /* CONFETTI */
+  .confetti-piece{position:fixed;pointer-events:none;z-index:999;animation:confettiFall 2s ease-in forwards;}
+  @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+  /* ANIMATIONS */
+  @keyframes popIn{0%{transform:scale(0.3);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-16px)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+  @keyframes wobble{0%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}100%{transform:rotate(0)}}
+  @keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="cloud">☁️</div>
+<div class="cloud">☁️</div>
+<div class="cloud">☁️</div>
+
+<!-- ========== MASCOT PICKER ========== -->
+<div class="screen active" id="screen-mascot">
+  <div class="welcome-title">🌈 My Happy Playroom!</div>
+  <div class="welcome-sub">Pick your best friend to play with! 💛</div>
+  <div class="mascot-grid">
+    <div class="mascot-card" onclick="selectMascot(this,'🐱','Kitty','#FF6B9D')">
+      <span class="mascot-emoji">🐱</span><div class="mascot-name">Kitty</div>
+    </div>
+    <div class="mascot-card" onclick="selectMascot(this,'🐶','Puppy','#FF922B')">
+      <span class="mascot-emoji">🐶</span><div class="mascot-name">Puppy</div>
+    </div>
+    <div class="mascot-card" onclick="selectMascot(this,'🦋','Flutter','#CC5DE8')">
+      <span class="mascot-emoji">🦋</span><div class="mascot-name">Flutter</div>
+    </div>
+    <div class="mascot-card" onclick="selectMascot(this,'🐸','Froggy','#6BCB77')">
+      <span class="mascot-emoji">🐸</span><div class="mascot-name">Froggy</div>
+    </div>
+    <div class="mascot-card" onclick="selectMascot(this,'🐻','Teddy','#A9836A')">
+      <span class="mascot-emoji">🐻</span><div class="mascot-name">Teddy</div>
+    </div>
+    <div class="mascot-card" onclick="selectMascot(this,'🦄','Uni','#4DABF7')">
+      <span class="mascot-emoji">🦄</span><div class="mascot-name">Uni</div>
+    </div>
+  </div>
+  <button class="btn-start" id="btnStart" onclick="goHome()">Let's Play! 🎉</button>
+</div>
+
+<!-- ========== HOME ========== -->
+<div class="screen" id="screen-home">
+  <div class="top-bar">
+    <div class="mascot-badge" onclick="changeMascot()" title="Change friend">
+      <span class="emo" id="homeMascotEmoji">🐱</span>
+      <div>
+        <span id="homeMascotName">Kitty</span>
+        <span class="change-hint">tap to change</span>
+      </div>
+    </div>
+    <div class="stars-badge">⭐ <span id="starCount">0</span></div>
+  </div>
+  <div class="speech-mascot-row">
+    <div class="mascot-speech" id="homeSpeech">Hi! I'm your friend! Let's learn together! 🎊</div>
+    <div class="big-mascot" id="homeMascotBig">🐱</div>
+  </div>
+  <div class="home-title">What shall we do? 🤩</div>
+  <div class="activity-grid">
+    <div class="activity-card trace" onclick="goTrace()">
+      <span class="activity-icon">✏️</span>
+      <div class="activity-label">Draw Lines!</div>
+      <div class="activity-sub">Trace & practice</div>
+    </div>
+    <div class="activity-card count" onclick="goCount()">
+      <span class="activity-icon">🔢</span>
+      <div class="activity-label">Count Fun!</div>
+      <div class="activity-sub">Tap & count</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TRACE ========== -->
+<div class="screen" id="screen-trace">
+  <div class="act-header">
+    <button class="btn-back" onclick="goHome()">🏠</button>
+    <div class="act-title">✏️ Draw Lines!</div>
+    <div style="margin-left:auto;font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--orange)">⭐ <span id="traceStars">0</span></div>
+  </div>
+  <div class="trace-area">
+    <div class="mascot-speech" id="traceSpeech" style="margin-bottom:8px">Let's trace the dotted lines! Go slowly 🐢</div>
+    <div class="line-type-selector">
+      <button class="line-type-btn active" id="btnStanding" onclick="setLineType('standing')">📏 Standing</button>
+      <button class="line-type-btn" id="btnSleeping" onclick="setLineType('sleeping')">💤 Sleeping</button>
+      <button class="line-type-btn" id="btnDiagonal" onclick="setLineType('diagonal')">↗️ Slanting</button>
+    </div>
+    <div class="progress-dots" id="traceDots"></div>
+    <canvas id="traceCanvas" width="560" height="270"></canvas>
+    <div class="accuracy-bar-wrap">
+      <div class="accuracy-label" id="accuracyLabel">Draw along the dotted line! 🖊️</div>
+      <div class="accuracy-bar-bg"><div class="accuracy-bar-fill" id="accuracyBar"></div></div>
+    </div>
+    <div class="trace-controls">
+      <button class="trace-btn btn-clear" onclick="clearTrace()">🗑️ Try Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== COUNT ========== -->
+<div class="screen" id="screen-count">
+  <div class="act-header">
+    <button class="btn-back" onclick="goHome()">🏠</button>
+    <div class="act-title">🔢 Count Fun!</div>
+    <div style="margin-left:auto;font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--orange)">⭐ <span id="countStars">0</span></div>
+  </div>
+  <div class="count-area">
+    <div class="mascot-speech" id="countSpeech" style="margin-bottom:8px">Tap each one as you count! 👆</div>
+    <div class="count-question" id="countQuestion">How many do you see?</div>
+    <div class="objects-grid" id="objectsGrid"></div>
+    <div class="count-number-display" id="countDisplay">Tap to count! 👆</div>
+    <div style="font-family:'Fredoka One',cursive;color:#aaa;margin-bottom:8px;font-size:0.9rem">Choose the right number:</div>
+    <div class="answer-choices" id="answerChoices"></div>
+  </div>
+</div>
+
+<!-- ========== CELEBRATION ========== -->
+<div class="celebration-overlay" id="celebOverlay">
+  <div class="cele-emoji" id="celebEmoji">🎉</div>
+  <div class="cele-text" id="celebText">Amazing job!</div>
+  <div class="cele-stars" id="celebStars">⭐⭐⭐</div>
+  <button class="btn-continue" onclick="closeCeleb()">Keep Playing! 🚀</button>
+</div>
+
+<!-- ========== RETRY ========== -->
+<div class="retry-overlay" id="retryOverlay">
+  <div class="retry-emoji" id="retryEmoji">😅</div>
+  <div class="retry-text" id="retryText">Oops! Try again!</div>
+  <div class="accuracy-shown" id="retryAccuracy"></div>
+  <div class="retry-sub">Keep going — you can do it! 💪</div>
+  <button class="btn-retry" onclick="closeRetry()">Try Again! 🖊️</button>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let mascot={emoji:'🐱',name:'Kitty',color:'#FF6B9D'};
+let totalStars=0;
+let currentLineType='standing';
+let currentTraceIdx=0;
+let isDrawing=false;
+let lastX=0,lastY=0;
+let celebCallback=null;
+let retryCallback=null;
+let allStrokePixels=[];
+let guidePixelSet=new Set();
+let guideCenterPixels=[];
+let guideLineEndpoints={x1:0,y1:0,x2:0,y2:0};
+let lineResults=[]; // track pass/fail per line: true=pass, false=fail
+
+// ============================================================
+// SPEECH & SOUND
+// ============================================================
+let synth=window.speechSynthesis;
+let voicesList=[];
+let selectedVoice=null;
+
+function loadVoices(){
+  voicesList=synth.getVoices();
+  pickBestVoice();
+}
+loadVoices();
+if(speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadVoices;
+
+function pickBestVoice(){
+  if(voicesList.length===0) return;
+  // Priority 1: explicit child/junior voice
+  selectedVoice=voicesList.find(v=>/junior|kid|child/i.test(v.name));
+  if(selectedVoice) return;
+  // Priority 2: high-pitched female voices that sound young
+  selectedVoice=voicesList.find(v=>/samantha|karen|moira|tessa|victoria|kathy|vicki|fiona|veena|zira|satu|amelie/i.test(v.name));
+  if(selectedVoice) return;
+  // Priority 3: any female en-US or en-GB
+  selectedVoice=voicesList.find(v=>v.lang==='en-US')||voicesList.find(v=>v.lang.startsWith('en'))||voicesList[0];
+}
+
+// mood: 'excited' | 'normal' | 'low'
+function speak(text, rate, pitch, mood='normal'){
+  if(!synth) return;
+  synth.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+
+  // Toddler base: higher pitch, slightly slower, cheerful
+  if(mood==='excited'){
+    utt.rate=1.08; utt.pitch=2.0; utt.volume=1.0;
+  } else if(mood==='low'){
+    utt.rate=0.80; utt.pitch=1.2; utt.volume=0.9;
+  } else {
+    utt.rate=rate||0.90; utt.pitch=pitch||1.65; utt.volume=1.0;
+  }
+
+  if(selectedVoice) utt.voice=selectedVoice;
+  synth.speak(utt);
+}
+
+function playPop(){
+  try{
+    const a=new(window.AudioContext||window.webkitAudioContext)();
+    [[880,0,0.12],[1200,0.1,0.10],[1600,0.18,0.12],[2000,0.26,0.10]].forEach(([f,s,d])=>{
+      const o=a.createOscillator(),g=a.createGain();
+      o.connect(g);g.connect(a.destination);
+      o.frequency.setValueAtTime(f,a.currentTime+s);
+      o.frequency.exponentialRampToValueAtTime(f*0.5,a.currentTime+s+d);
+      g.gain.setValueAtTime(0.22,a.currentTime+s);
+      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+s+d);
+      o.start(a.currentTime+s);o.stop(a.currentTime+s+d);
+    });
+  }catch(e){}
+}
+
+function playRetry(){
+  try{
+    const a=new(window.AudioContext||window.webkitAudioContext)();
+    const o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);
+    o.frequency.setValueAtTime(500,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(220,a.currentTime+0.45);
+    g.gain.setValueAtTime(0.18,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.45);
+    o.start(a.currentTime);o.stop(a.currentTime+0.45);
+  }catch(e){}
+}
+
+// ============================================================
+// MASCOT PICKER
+// ============================================================
+function selectMascot(card,emoji,name,color){
+  document.querySelectorAll('.mascot-card').forEach(c=>c.classList.remove('selected'));
+  card.classList.add('selected');
+  mascot={emoji,name,color};
+  document.getElementById('btnStart').classList.add('show');
+  speak(`Yay! Hi! I am ${name}! Let's play together!`,0.9,1.85,'excited');
+}
+
+function changeMascot(){
+  showScreen('screen-mascot');
+  document.querySelectorAll('.mascot-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('btnStart').classList.remove('show');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+const HOME_SPEECHES=[
+  "Hi! Let's learn and play together!",
+  "You are doing amazing! Pick something!",
+  "Let's have so much fun today!"
+];
+
+function goHome(){
+  showScreen('screen-home');
+  document.getElementById('homeMascotEmoji').textContent=mascot.emoji;
+  document.getElementById('homeMascotName').textContent=mascot.name;
+  document.getElementById('homeMascotBig').textContent=mascot.emoji;
+  document.getElementById('starCount').textContent=totalStars;
+  const s=HOME_SPEECHES[Math.floor(Math.random()*HOME_SPEECHES.length)];
+  document.getElementById('homeSpeech').textContent=mascot.emoji+' '+s;
+}
+
+// ============================================================
+// TRACING — ACCURACY ENGINE
+// ============================================================
+const canvas=document.getElementById('traceCanvas');
+const ctx=canvas.getContext('2d');
+
+const TRACE_SPEECHES={
+  standing:[
+    "Draw a tall standing line! Like a big tall tree! Go from top to bottom!",
+    "Up and down! You are doing amazing!",
+    "Straight down, like rain falling! Go go go!"
+  ],
+  sleeping:[
+    "Draw a sleeping line! Like a long road going sideways!",
+    "Left to right! Like a sleeping caterpillar! Zzzz!",
+    "Draw across! You are a superstar!"
+  ],
+  diagonal:[
+    "Draw a slanting line! Like a slide at the park! Wheee!",
+    "Whoosh! Diagonal! Like a shooting star!",
+    "Slant it! You can do it! Go from corner to corner!"
+  ]
+};
+
+function goTrace(){
+  showScreen('screen-trace');
+  document.getElementById('traceStars').textContent=totalStars;
+  setLineType('standing');
+}
+
+function setLineType(type){
+  currentLineType=type;
+  document.querySelectorAll('.line-type-btn').forEach(b=>b.classList.remove('active'));
+  const map={standing:'btnStanding',sleeping:'btnSleeping',diagonal:'btnDiagonal'};
+  document.getElementById(map[type]).classList.add('active');
+  currentTraceIdx=0;
+  allStrokePixels=[];
+  lineResults=[];
+  buildTraceDots();
+  drawTraceGuide();
+  updateTraceSpeech();
+  resetAccuracyBar();
+}
+
+function updateTraceSpeech(){
+  const arr=TRACE_SPEECHES[currentLineType];
+  const s=arr[Math.floor(Math.random()*arr.length)];
+  document.getElementById('traceSpeech').textContent=mascot.emoji+' '+s;
+  speak(s,0.88,1.45);
+}
+
+function buildTraceDots(){
+  const el=document.getElementById('traceDots');
+  el.innerHTML='';
+  for(let i=0;i<3;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i<currentTraceIdx?' done':i===currentTraceIdx?' active':'');
+    el.appendChild(d);
+  }
+}
+
+function getCanvasSize(){
+  const maxW=Math.min(window.innerWidth-48,560);
+  canvas.width=maxW;
+  canvas.height=Math.round(maxW*0.48);
+}
+
+// Compute guide data for a column
+function computeGuidePixels(colIdx){
+  const w=canvas.width,h=canvas.height;
+  const colW=w/3;
+  const cx=colW*colIdx+colW/2;
+  const margin=Math.min(colW*0.26,h*0.13);
+  let x1,y1,x2,y2;
+  if(currentLineType==='standing'){x1=cx;y1=margin;x2=cx;y2=h-margin;}
+  else if(currentLineType==='sleeping'){x1=colW*colIdx+margin;y1=h/2;x2=colW*(colIdx+1)-margin;y2=h/2;}
+  else{x1=colW*colIdx+margin;y1=margin;x2=colW*(colIdx+1)-margin;y2=h-margin;}
+
+  guideLineEndpoints={x1,y1,x2,y2};
+
+  const pixels=new Set();
+  const tol=22;
+  const steps=120;
+  guideCenterPixels=[];
+  for(let t=0;t<=steps;t++){
+    const px=Math.round(x1+(x2-x1)*(t/steps));
+    const py=Math.round(y1+(y2-y1)*(t/steps));
+    guideCenterPixels.push([px,py]);
+    for(let dx=-tol;dx<=tol;dx++)for(let dy=-tol;dy<=tol;dy++){
+      if(dx*dx+dy*dy<=tol*tol) pixels.add((px+dx)*10000+(py+dy));
+    }
+  }
+  return pixels;
+}
+
+function drawTraceGuide(){
+  getCanvasSize();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const w=canvas.width,h=canvas.height;
+  ctx.fillStyle='#f8f9ff';ctx.fillRect(0,0,w,h);
+  const colW=w/3;
+
+  for(let i=0;i<3;i++){
+    const cx=colW*i+colW/2;
+    const state=i<currentTraceIdx?'done':i===currentTraceIdx?'active':'pending';
+    const margin=Math.min(colW*0.26,h*0.13);
+    let x1,y1,x2,y2;
+    if(currentLineType==='standing'){x1=cx;y1=margin;x2=cx;y2=h-margin;}
+    else if(currentLineType==='sleeping'){x1=colW*i+margin;y1=h/2;x2=colW*(i+1)-margin;y2=h/2;}
+    else{x1=colW*i+margin;y1=margin;x2=colW*(i+1)-margin;y2=h-margin;}
+
+    // Dotted guide line
+    ctx.setLineDash([10,8]);ctx.lineCap='round';
+    ctx.lineWidth=state==='active'?7:3;
+    let lineColor='#d5d5d5';
+    if(state==='done') lineColor=lineResults[i]===false?'#ffb3b3':'#c0f0cc';
+    else if(state==='active') lineColor='#4DABF7';
+    ctx.strokeStyle=lineColor;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Start dot
+    let dotColor='#ccc';
+    if(state==='active') dotColor='#FF6B6B';
+    else if(state==='done') dotColor=lineResults[i]===false?'#FF6B6B':'#6BCB77';
+    ctx.fillStyle=dotColor;
+    ctx.beginPath();ctx.arc(x1,y1,state==='active'?12:7,0,Math.PI*2);ctx.fill();
+
+    // Direction hint
+    if(state==='active'){
+      ctx.font=`${Math.min(colW*0.21,23)}px serif`;
+      ctx.textAlign='center';
+      if(currentLineType==='standing') ctx.fillText('👇',cx,y1-12);
+      else if(currentLineType==='sleeping') ctx.fillText('👉',x1-26,y1+10);
+      else ctx.fillText('↘️',cx,y1-12);
+    }
+
+    // Done tick or fail cross
+    if(state==='done'){
+      const passed=lineResults[i]; // true=pass, false=fail, undefined=not yet
+      ctx.font=`${Math.min(colW*0.26,27)}px serif`;
+      ctx.textAlign='center';
+      ctx.fillText(passed===false?'❌':'✅',cx,h/2+8);
+      // Tint the guide line red if failed
+      if(passed===false){
+        ctx.setLineDash([10,8]);ctx.lineCap='round';
+        ctx.lineWidth=3;
+        ctx.strokeStyle='#ffb3b3';
+        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Column divider
+    if(i<2){
+      ctx.strokeStyle='#ebebeb';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(colW*(i+1),8);ctx.lineTo(colW*(i+1),h-8);ctx.stroke();
+    }
+  }
+  // Pre-compute guide pixels for current active column
+  if(currentTraceIdx<3) guidePixelSet=computeGuidePixels(currentTraceIdx);
+  allStrokePixels=[];
+  buildTraceDots();
+}
+
+// ---- Draw input ----
+function getPos(e){
+  const r=canvas.getBoundingClientRect();
+  const sx=canvas.width/r.width,sy=canvas.height/r.height;
+  if(e.touches) return{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy};
+  return{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};
+}
+
+canvas.addEventListener('mousedown',e=>{isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();isDrawing=true;const p=getPos(e);lastX=p.x;lastY=p.y;},{passive:false});
+canvas.addEventListener('mousemove',e=>{if(isDrawing)drawStroke(e);});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(isDrawing)drawStroke(e);},{passive:false});
+canvas.addEventListener('mouseup',()=>{if(isDrawing){isDrawing=false;autoCheckLine();}});
+canvas.addEventListener('touchend',()=>{if(isDrawing){isDrawing=false;autoCheckLine();}});
+canvas.addEventListener('mouseleave',()=>{if(isDrawing){isDrawing=false;autoCheckLine();}});
+
+let autoCheckTimeout=null;
+function autoCheckLine(){
+  if(allStrokePixels.length<15) return;
+  clearTimeout(autoCheckTimeout);
+  autoCheckTimeout=setTimeout(()=>{checkLine();},500);
+}
+
+function drawStroke(e){
+  const p=getPos(e);
+  const colW=canvas.width/3;
+  const colStart=colW*currentTraceIdx,colEnd=colW*(currentTraceIdx+1);
+  if(p.x<colStart||p.x>colEnd){lastX=p.x;lastY=p.y;return;}
+
+  ctx.strokeStyle='#4DABF7';ctx.lineWidth=18;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();
+
+  // Sample points along this micro-segment
+  const dist=Math.hypot(p.x-lastX,p.y-lastY);
+  const steps=Math.max(1,Math.ceil(dist/2));
+  for(let t=0;t<=steps;t++){
+    const px=Math.round(lastX+(p.x-lastX)*(t/steps));
+    const py=Math.round(lastY+(p.y-lastY)*(t/steps));
+    allStrokePixels.push([px,py]);
+  }
+  lastX=p.x;lastY=p.y;
+  updateAccuracyBar();
+}
+
+function computeAccuracy(){
+  if(allStrokePixels.length===0) return 0;
+
+  const tol=22;
+  const tol2=tol*tol;
+
+  // COVERAGE: what fraction of guide segments have been touched by stroke?
+  // For efficiency, build a spatial grid of stroke pixels
+  const strokeGrid=new Map();
+  for(const [px,py] of allStrokePixels){
+    const key=Math.floor(px/8)+','+Math.floor(py/8);
+    if(!strokeGrid.has(key)) strokeGrid.set(key,[[px,py]]);
+    else strokeGrid.get(key).push([px,py]);
+  }
+
+  let coveredSegments=0;
+  for(const [gx,gy] of guideCenterPixels){
+    // Check nearby grid cells
+    let hit=false;
+    const gxi=Math.floor(gx/8),gyi=Math.floor(gy/8);
+    outer: for(let di=-3;di<=3&&!hit;di++) for(let dj=-3;dj<=3&&!hit;dj++){
+      const cell=strokeGrid.get((gxi+di)+','+(gyi+dj));
+      if(!cell) continue;
+      for(const [px,py] of cell){
+        if((px-gx)*(px-gx)+(py-gy)*(py-gy)<=tol2){hit=true;break outer;}
+      }
+    }
+    if(hit) coveredSegments++;
+  }
+  const coverage=guideCenterPixels.length>0?(coveredSegments/guideCenterPixels.length):0;
+
+  // PRECISION: what fraction of drawn pixels are within tolerance of the guide?
+  let onGuide=0;
+  for(const [px,py] of allStrokePixels){
+    if(guidePixelSet.has(px*10000+py)) onGuide++;
+  }
+  const precision=allStrokePixels.length>0?(onGuide/allStrokePixels.length):0;
+
+  // Score: 70% coverage (did they cover the line?), 30% precision (did they stay on it?)
+  return Math.min(Math.round((coverage*0.7 + precision*0.3)*100), 100);
+}
+
+function updateAccuracyBar(){
+  const acc=computeAccuracy();
+  const bar=document.getElementById('accuracyBar');
+  bar.style.width=Math.min(acc,100)+'%';
+  bar.className='accuracy-bar-fill'+(acc>=80?' good':'');
+  document.getElementById('accuracyLabel').textContent=
+    acc>=80?`Great! ${acc}% on track! 🌟`:`${acc}% — stay closer to the dots!`;
+}
+
+function resetAccuracyBar(){
+  document.getElementById('accuracyBar').style.width='0%';
+  document.getElementById('accuracyBar').className='accuracy-bar-fill';
+  document.getElementById('accuracyLabel').textContent='Draw along the dotted line! 🖊️';
+}
+
+// ---- Check line ----
+function checkLine(){
+  if(allStrokePixels.length<20) return;
+  clearTimeout(autoCheckTimeout);
+  const acc=computeAccuracy();
+  const passed=acc>=75;
+
+  lineResults.push(passed);
+  allStrokePixels=[];
+  drawTraceGuide(); // redraws with correct ✅/❌ for completed lines
+  resetAccuracyBar();
+
+  const lineDone=currentTraceIdx; // 0-based index of the line just drawn
+  currentTraceIdx++;
+
+  if(currentTraceIdx<3){
+    // More lines to go
+    if(passed){
+      speak("Yay! Great job! Now draw the next line!",0.95,1.75,'excited');
+    } else {
+      const msg=acc<40
+        ?"Oops! That one was tricky! Try the next line!"
+        :"So close! Keep going, try the next one!";
+      speak(msg,0.80,1.15,'low');
+    }
+    drawTraceGuide();
+    resetAccuracyBar();
+  } else {
+    // All 3 lines done — show summary
+    const passes=lineResults.filter(r=>r).length;
+    const fails=3-passes;
+
+    setTimeout(()=>{
+      if(passes===3){
+        // Perfect!
+        awardStars(2);
+        playPop();
+        speak("Wow! You drew ALL three lines perfectly! You are a superstar!",1.08,2.0,'excited');
+        showCelebration('🎨 Perfect! All 3 lines! ⭐⭐⭐',2,()=>{
+          currentTraceIdx=0;lineResults=[];drawTraceGuide();updateTraceSpeech();
+        });
+      } else if(passes===2){
+        // 2 out of 3 — good, celebrate but note the miss
+        awardStars(1);
+        playPop();
+        speak("Great job! Two out of three lines were correct! Let's practice once more!",0.92,1.7,'excited');
+        showCelebration('🎨 2 out of 3 correct! Almost there! ⭐⭐',1,()=>{
+          currentTraceIdx=0;lineResults=[];drawTraceGuide();updateTraceSpeech();
+        });
+      } else if(passes===1){
+        // 1 out of 3 — gentle, try again
+        playRetry();
+        speak("You got one line right! Let's try all three again! You can do it!",0.82,1.2,'low');
+        showRetry("1 out of 3 correct — let's try again! 💪",()=>{
+          currentTraceIdx=0;lineResults=[];drawTraceGuide();resetAccuracyBar();updateTraceSpeech();
+        });
+      } else {
+        // 0 out of 3 — try again
+        playRetry();
+        speak("Oops! Let's try the lines again! Go slowly along the dots! You can do it!",0.80,1.15,'low');
+        showRetry("Let's try all 3 lines again! Stay on the dots! 🖊️",()=>{
+          currentTraceIdx=0;lineResults=[];drawTraceGuide();resetAccuracyBar();updateTraceSpeech();
+        });
+      }
+    },600); // small pause so child sees the final ❌/✅ on canvas before overlay
+  }
+}
+
+function clearTrace(){
+  clearTimeout(autoCheckTimeout);
+  allStrokePixels=[];
+  drawTraceGuide();
+  resetAccuracyBar();
+  speak("Let's try again! You can do it!",0.80,1.15,'low');
+}
+
+// ============================================================
+// COUNTING
+// ============================================================
+const COUNT_SETS=[
+  {emoji:'🍎',label:'apples',count:1},
+  {emoji:'⭐',label:'stars',count:2},
+  {emoji:'🐱',label:'cats',count:3},
+  {emoji:'🌸',label:'flowers',count:4},
+  {emoji:'🐸',label:'frogs',count:5},
+  {emoji:'🎈',label:'balloons',count:6},
+  {emoji:'🐥',label:'chicks',count:7},
+  {emoji:'🍭',label:'lollipops',count:8},
+  {emoji:'🌈',label:'rainbows',count:9},
+  {emoji:'🚗',label:'cars',count:10},
+  {emoji:'🍓',label:'strawberries',count:3},
+  {emoji:'🦋',label:'butterflies',count:6},
+  {emoji:'🐠',label:'fish',count:7},
+  {emoji:'🍦',label:'ice creams',count:4},
+  {emoji:'🎵',label:'music notes',count:8},
+  {emoji:'🌻',label:'sunflowers',count:5},
+  {emoji:'🦆',label:'ducks',count:9},
+  {emoji:'🍕',label:'pizza slices',count:10},
+  {emoji:'🐞',label:'ladybugs',count:2},
+  {emoji:'🎀',label:'ribbons',count:1},
+];
+let countQueue=[],countIdx=0,tappedCount=0,correctCount=0;
+
+const COUNT_SPEECHES=[
+  "Tap each one as you count them!",
+  "Count carefully! You have got this!",
+  "One by one! You are so smart!"
+];
+
+function goCount(){
+  showScreen('screen-count');
+  document.getElementById('countStars').textContent=totalStars;
+  countIdx=0;
+  countQueue=[...COUNT_SETS].sort(()=>Math.random()-0.5);
+  loadCountRound();
+}
+
+function loadCountRound(){
+  tappedCount=0;
+  const set=countQueue[countIdx%countQueue.length];
+  correctCount=set.count;
+  document.getElementById('countQuestion').textContent=`How many ${set.label} do you see? 👀`;
+  document.getElementById('countDisplay').textContent='Tap to count! 👆';
+  document.getElementById('countDisplay').style.color='var(--coral)';
+  const s=COUNT_SPEECHES[Math.floor(Math.random()*COUNT_SPEECHES.length)];
+  document.getElementById('countSpeech').textContent=mascot.emoji+' '+s;
+  speak(s,0.88,1.5);
+
+  const grid=document.getElementById('objectsGrid');
+  grid.innerHTML='';
+  for(let i=0;i<set.count;i++){
+    const item=document.createElement('div');
+    item.className='obj-item';
+    item.innerHTML=`<span>${set.emoji}</span><div class="tick">✓</div>`;
+    const tap=()=>tapObject(item);
+    item.addEventListener('click',tap);
+    item.addEventListener('touchstart',e=>{e.preventDefault();tap();},{passive:false});
+    grid.appendChild(item);
+  }
+
+  const choices=generateChoices(set.count);
+  const choicesEl=document.getElementById('answerChoices');
+  choicesEl.innerHTML='';
+  choices.forEach(n=>{
+    const btn=document.createElement('button');
+    btn.className='answer-btn';btn.textContent=n;
+    btn.addEventListener('click',()=>checkAnswer(n,btn));
+    choicesEl.appendChild(btn);
+  });
+  setAnswerBtnsEnabled(false);
+}
+
+function generateChoices(correct){
+  const choices=new Set([correct]);
+  let att=0;
+  while(choices.size<3&&att<40){
+    att++;
+    const d=correct+(Math.random()<0.5?1:-1)*(Math.floor(Math.random()*2)+1);
+    if(d>0&&d<=10) choices.add(d);
+  }
+  return [...choices].sort(()=>Math.random()-0.5);
+}
+
+function tapObject(item){
+  if(item.classList.contains('tapped')) return;
+  item.classList.add('tapped');
+  tappedCount++;
+  const currentCount=tappedCount;
+  document.getElementById('countDisplay').textContent=currentCount+' 🌟';
+  document.getElementById('countDisplay').style.fontSize='3rem';
+  setTimeout(()=>document.getElementById('countDisplay').style.fontSize='2.4rem',200);
+
+  if(currentCount===correctCount){
+    // Speak the number first, then after a delay say "pick the number"
+    speak(String(currentCount),0.88,1.7);
+    setTimeout(()=>{
+      setAnswerBtnsEnabled(true);
+      document.getElementById('countSpeech').textContent=mascot.emoji+' Now pick the number! Which one? 🔢';
+      speak("Now pick the number! Which one is right?",0.88,1.5);
+      document.getElementById('countDisplay').textContent=currentCount+' — pick now! 👇';
+    },900);
+  } else {
+    speak(String(currentCount),0.88,1.7);
+  }
+}
+
+function setAnswerBtnsEnabled(enabled){
+  document.querySelectorAll('.answer-btn').forEach(b=>{
+    b.disabled=!enabled;b.style.opacity=enabled?'1':'0.38';
+  });
+}
+
+function checkAnswer(chosen,btn){
+  document.querySelectorAll('.answer-btn').forEach(b=>b.disabled=true);
+  if(chosen===correctCount){
+    btn.classList.add('correct');
+    awardStars(1);
+    playPop();
+    speak(`Yay! ${chosen}! You are so clever! Hooray! Amazing job!`,1.0,1.9,'excited');
+    setTimeout(()=>{
+      showCelebration(`${chosen} is right! 🎊`,1,()=>{countIdx++;loadCountRound();});
+    },400);
+  } else {
+    btn.classList.add('wrong');
+    playRetry();
+    speak("Oops! Let's count again! Tap them one by one! You can do it!",0.78,1.1,'low');
+    document.getElementById('countSpeech').textContent=mascot.emoji+' Oops! Count again! 🤔';
+    setTimeout(()=>{btn.classList.remove('wrong');setAnswerBtnsEnabled(true);},800);
+  }
+}
+
+// ============================================================
+// STARS
+// ============================================================
+function awardStars(n){
+  totalStars+=n;
+  ['starCount','traceStars','countStars'].forEach(id=>{
+    document.getElementById(id).textContent=totalStars;
+  });
+}
+
+// ============================================================
+// CELEBRATION
+// ============================================================
+function showCelebration(text,stars,callback){
+  celebCallback=callback;
+  document.getElementById('celebEmoji').textContent=mascot.emoji;
+  document.getElementById('celebText').textContent=text;
+  document.getElementById('celebStars').textContent='⭐'.repeat(Math.min(stars,5));
+  document.getElementById('celebOverlay').classList.add('active');
+  launchConfetti();
+}
+function closeCeleb(){
+  document.getElementById('celebOverlay').classList.remove('active');
+  if(celebCallback){celebCallback();celebCallback=null;}
+}
+
+// ============================================================
+// RETRY
+// ============================================================
+function showRetry(message,callback){
+  retryCallback=callback;
+  document.getElementById('retryEmoji').textContent=mascot.emoji;
+  document.getElementById('retryAccuracy').textContent=message;
+  document.getElementById('retryText').textContent='Keep going — you can do it! 💪';
+  document.getElementById('retryOverlay').classList.add('active');
+}
+function closeRetry(){
+  document.getElementById('retryOverlay').classList.remove('active');
+  if(retryCallback){retryCallback();retryCallback=null;}
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+function launchConfetti(){
+  const colors=['#FF6B6B','#FFD93D','#6BCB77','#4DABF7','#CC5DE8','#FF922B','#F06595'];
+  for(let i=0;i<42;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');
+      p.className='confetti-piece';
+      p.style.cssText=`left:${Math.random()*100}vw;top:-20px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        animation-duration:${1.4+Math.random()}s;
+        animation-delay:${Math.random()*0.2}s;
+        width:${7+Math.random()*10}px;height:${7+Math.random()*10}px;
+        border-radius:${Math.random()>0.5?'50%':'3px'};`;
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),2600);
+    },i*26);
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('resize',()=>{
+  if(document.getElementById('screen-trace').classList.contains('active')) drawTraceGuide();
+});
+drawTraceGuide();
+</script>
+</body>
+</html>
